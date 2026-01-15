@@ -1,0 +1,16 @@
+services:
+  backend:
+    build: ./gptcompare-backend
+    container_name: gptcompare-backend
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./gptcompare-frontend
+    container_name: gptcompare-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend

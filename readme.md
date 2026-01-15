@@ -1,135 +1,127 @@
-# 🤖 GPT Compare (Angular + Spring WebFlux)
+# GPT Compare
 
-Application full-stack permettant de comparer les réponses de modèles GPT sur une même question, avec des réglages A/B (modèle, température, max tokens…).
+## Description
 
-Le backend appelle l’endpoint OpenAI Responses API (`/v1/responses`) et renvoie une réponse normalisée :
-- texte
-- métriques de tokens
-- latence
-- statut de tronquage
+GPT Compare est une application web full‑stack permettant de comparer les réponses de différents modèles GPT sur un même prompt, avec des paramètres configurables (modèle, température, nombre de tokens, etc.).
 
----
+Le projet est composé de :
 
-## 🚀 Fonctionnalités
+* un **backend** en Java (Spring Boot WebFlux) qui centralise les appels à l’API OpenAI ;
+* un **frontend** en Angular qui fournit l’interface utilisateur.
 
-### Architecture
-
-- Frontend Angular → appelle le backend via HTTP
-- Backend Spring WebFlux → appelle l’API OpenAI
-- Aucun appel OpenAI direct depuis le navigateur (clé sécurisée)
----
-### Frontend (Angular)
-
-- Mode **simple** (A) ou **comparaison A/B**
-- Réglages par modèle :
-  - `model`
-  - `temperature` (désactivée automatiquement pour GPT-5*)
-  - `maxOutputTokens`
-
-- Affichage :
-  - réponse texte
-  - latence (`latencyMs`)
-  - tokens (`totalTokens`, etc.)
-  - détection “réponse tronquée”
-  - boutons **Relancer à 4000 / 8000**
-
-- UX :
-  - bouton **Réglages**
-  - bouton **Effacer**
-  - raccourci **Ctrl / Cmd + Entrée**
-  - gestion d’état robuste : `loading`, `error`, résultats
+L’application peut être lancée localement soit en mode développement classique, soit **via Docker**, sans installer Java, Node.js ou Angular sur la machine.
 
 ---
 
-### Backend (Spring Boot WebFlux)
+## Architecture
 
-- API REST réactive :
-  - `POST /api/chat/send`
-  - `GET /api/chat/ping`
-
-- Appel OpenAI via `WebClient` (JSON)
-
-- Garde-fous :
-  - `max_output_tokens` par défaut : **800**
-  - cap maximum : **8000**
-  - omission de `temperature` quand `null` ou non supportée
-
-- Parsing robuste de la réponse OpenAI :
-  - extraction prioritaire de `output_text`
-  - fallback sur n’importe quel champ `text`
-  - gestion des statuts `completed` / `incomplete`
-
-- Gestion d’erreurs :
-  - erreurs HTTP OpenAI (400 / 401 / 500…)
-  - coupure réseau / timeout
-  - réponse invalide (champ `output` manquant)
+```
+.
+├── gptcompare-backend    # Backend Spring Boot (WebFlux)
+├── gptcompare-frontend   # Frontend Angular
+├── docker-compose.yml    # Orchestration Docker
+└── README.md
+```
 
 ---
 
-## 🧱 Stack technique
+## Prérequis
 
-### Frontend
-- Angular (standalone components)
-- TypeScript
-- RxJS
-- Vitest (tests + coverage)
+### Option 1 – Avec Docker (recommandé)
 
-### Backend
-- Java 21
-- Spring Boot 4 + WebFlux
-- OkHttp MockWebServer (tests)
-- Reactor Test (StepVerifier)
-- JaCoCo (coverage)
-- Approche réactive (RxJS / Reactor) pour une gestion fluide des appels asynchrones,
-des états de chargement et des erreurs réseau.
+* Docker Desktop (Windows / macOS / Linux)
+* Docker Compose (inclus avec Docker Desktop)
 
+### Option 2 – Sans Docker
 
-### Tests & qualité
-
-- Frontend : tests unitaires avec Vitest
-- Backend : tests réactifs avec StepVerifier
-- Couverture de code mesurée avec JaCoCo
+* Java 21+
+* Maven 3.9+
+* Node.js 20+
+* npm
+* Angular CLI
 
 ---
 
-## ⚡ Démarrage rapide
+## Configuration
+
+### Variable d’environnement
+
+Le backend nécessite une clé OpenAI.
+
+Créer un fichier `.env` à la racine du projet :
+
+```env
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
+```
+
+Ce fichier n’est pas versionné et ne doit pas être commité.
+
+---
+
+## Démarrage avec Docker
+
+C’est le moyen le plus simple pour lancer l’application.
+
+Depuis la racine du projet :
+
+```bash
+docker compose up --build
+```
+
+Une fois le build terminé :
+
+* Frontend : [http://localhost:4200](http://localhost:4200)
+* Backend : [http://localhost:8080](http://localhost:8080)
+
+Pour arrêter l’application :
+
+```bash
+docker compose down
+```
+
+---
+
+## Démarrage sans Docker (mode développement)
 
 ### Backend
 
-#### Prérequis
-- Java 21
-- Maven
-- Une clé OpenAI dans la variable d’environnement `OPENAI_API_KEY`
-
-#### Lancer le backend
 ```bash
 cd gptcompare-backend
-export OPENAI_API_KEY="sk-..."
 mvn spring-boot:run
 ```
-Backend disponible sur : http://localhost:8080
+
+Le backend démarre sur : [http://localhost:8080](http://localhost:8080)
+
+### Frontend
+
+```bash
+cd gptcompare-frontend
+npm install
+npm start
+```
+
+Le frontend démarre sur : [http://localhost:4200](http://localhost:4200)
+
+---
+
+## Vérification rapide
+
+Une fois l’application démarrée :
+
+* Ouvrir [http://localhost:4200](http://localhost:4200)
+* Saisir un prompt simple
+* Lancer la comparaison
+
+Pour tester le backend directement :
 
 ```bash
 curl http://localhost:8080/api/chat/ping
 ```
 
-### Frontend
-
-
-#### Prérequis
-- Node.js + npm
-- Angular CLI
-
-#### Lancer le frontend
-```bash
-cd gptcompare-frontend
-npm install
-ng serve
-```
-
-Frontend disponible sur : http://localhost:4200
-
-
-### 🎬 Vidéo de démonstration
 ---
-https://youtu.be/gXUBaCgB8fo
+
+## Notes techniques
+
+* Le frontend est servi par Nginx en production Docker.
+* Les appels API passent par `/api/*` et sont proxyfiés vers le backend.
+* La clé OpenAI n’est jamais exposée côté navigateur.
