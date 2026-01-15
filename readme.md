@@ -128,3 +128,8 @@ ng serve
 ```
 
 Frontend disponible sur : http://localhost:4200
+
+
+### 🎬 Vidéo de démonstration
+---
+https://youtu.be/gXUBaCgB8fo
