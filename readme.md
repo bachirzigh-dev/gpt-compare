@@ -29,8 +29,8 @@ L’application peut être lancée localement soit en mode développement classi
 
 ### Option 1 – Avec Docker (recommandé)
 
-* Docker Desktop (Windows / macOS / Linux)
-* Docker Compose (inclus avec Docker Desktop)
+* Docker Desktop (Windows)
+* Docker Compose
 
 ### Option 2 – Sans Docker
 
@@ -119,6 +119,9 @@ curl http://localhost:8080/api/chat/ping
 ```
 
 ---
+## Vidéo de démonstration
+
+https://www.youtube.com/watch?v=gXUBaCgB8fo
 
 ## Notes techniques
 
