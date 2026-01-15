@@ -1,0 +1,32 @@
+# Node / Angular
+node_modules/
+dist/
+.angular/
+.vscode/
+*.log
+coverage/
+
+
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+*.iml
+*.log
+hs_err_pid*
+
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
+
+# IntelliJ / Eclipse
+.idea/
+.settings/
+.project
+.classpath

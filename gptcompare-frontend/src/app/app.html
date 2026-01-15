@@ -1,0 +1,220 @@
+<div class="page">
+  <div class="card">
+    <header class="header">
+      <div>
+        <h1 class="title">GptCompare</h1>
+        <p class="subtitle">Compare des réglages GPT sur la même question.</p>
+      </div>
+
+      <button
+        class="btn ghost"
+        type="button"
+        (click)="showSettings = !showSettings"
+        [attr.aria-expanded]="showSettings"
+      >
+        {{ showSettings ? 'Masquer' : 'Réglages' }}
+      </button>
+    </header>
+
+    <!-- Réglages -->
+    <section class="composer" *ngIf="showSettings">
+      <div class="row">
+        <div>
+          <div class="sectionTitle" style="margin:0;">Mode comparaison</div>
+          <div class="hint">Envoie la même question avec A et B.</div>
+        </div>
+
+        <label class="toggle">
+          <input type="checkbox" [(ngModel)]="compareMode" />
+          <span>Comparer</span>
+        </label>
+      </div>
+
+      <div class="settingsGrid" [class.two]="compareMode">
+        <!-- A -->
+        <div class="settingsBox">
+          <div class="settingsTitle">Réglages A</div>
+
+          <label class="label" for="modelA">Modèle</label>
+          <select id="modelA" class="select" [(ngModel)]="settingsA.model">
+            <optgroup label="GPT-5 (sans température)">
+              <option value="gpt-5-mini">gpt-5-mini</option>
+              <option value="gpt-5-nano">gpt-5-nano</option>
+            </optgroup>
+
+            <optgroup label="GPT-4.x (température activée)">
+              <option value="gpt-4.1">gpt-4.1</option>
+              <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+            </optgroup>
+          </select>
+
+          <label class="label" style="margin-top:12px;">
+            Température : <strong>{{ settingsA.temperature }}</strong>
+            <span class="pill" *ngIf="!supportsTemperature(settingsA.model)">non supportée</span>
+          </label>
+          <input
+            class="range"
+            type="range"
+            min="0"
+            max="1"
+            step="0.1"
+            [(ngModel)]="settingsA.temperature"
+            [disabled]="!supportsTemperature(settingsA.model)"
+          />
+
+          <label class="label" style="margin-top:12px;">
+            Max tokens sortie : <strong>{{ settingsA.maxOutputTokens }}</strong>
+          </label>
+          <input
+            class="range"
+            type="range"
+            min="200"
+            max="8000"
+            step="200"
+            [(ngModel)]="settingsA.maxOutputTokens"
+          />
+          <div class="hint">Plus haut = réponse plus longue (et plus chère)</div>
+        </div>
+
+        <!-- B -->
+        <div class="settingsBox" *ngIf="compareMode">
+          <div class="settingsTitle">Réglages B</div>
+
+          <label class="label" for="modelB">Modèle</label>
+          <select id="modelB" class="select" [(ngModel)]="settingsB.model">
+            <optgroup label="GPT-5 (sans température)">
+              <option value="gpt-5-mini">gpt-5-mini</option>
+              <option value="gpt-5-nano">gpt-5-nano</option>
+            </optgroup>
+
+            <optgroup label="GPT-4.x (température activée)">
+              <option value="gpt-4.1">gpt-4.1</option>
+              <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+            </optgroup>
+          </select>
+
+          <label class="label" style="margin-top:12px;">
+            Température : <strong>{{ settingsB.temperature }}</strong>
+            <span class="pill" *ngIf="!supportsTemperature(settingsB.model)">non supportée</span>
+          </label>
+          <input
+            class="range"
+            type="range"
+            min="0"
+            max="1"
+            step="0.1"
+            [(ngModel)]="settingsB.temperature"
+            [disabled]="!supportsTemperature(settingsB.model)"
+          />
+
+          <label class="label" style="margin-top:12px;">
+            Max tokens sortie : <strong>{{ settingsB.maxOutputTokens }}</strong>
+          </label>
+          <input
+            class="range"
+            type="range"
+            min="200"
+            max="8000"
+            step="200"
+            [(ngModel)]="settingsB.maxOutputTokens"
+          />
+          <div class="hint">Plus haut = réponse plus longue (et plus chère)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Saisie -->
+    <section class="composer">
+      <label class="label" for="msg">Votre question</label>
+
+      <div class="inputWrap">
+        <textarea
+          id="msg"
+          [(ngModel)]="message"
+          rows="5"
+          class="textarea"
+          placeholder="Écrivez votre requête ici"
+          (keydown)="onKeyDown($event)"
+          autocomplete="off"
+        ></textarea>
+
+        <div class="meta">
+          <span class="hint">{{ message.length }} caractères</span>
+          <span class="hint" *ngIf="loading">En cours…</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" type="button" (click)="send()" [disabled]="loading || !message.trim()">
+          <span>{{ loading ? 'Envoi…' : (compareMode ? 'Comparer' : 'Envoyer') }}</span>
+        </button>
+
+        <button class="btn ghost" type="button" (click)="clear()" [disabled]="loading">
+          Effacer
+        </button>
+      </div>
+
+      <div class="alert" *ngIf="error">
+        <strong>Erreur :</strong> {{ error }}
+      </div>
+    </section>
+
+    <!-- Résultats -->
+    <section class="answer" [attr.aria-busy]="loading">
+      <div class="answerHeader">
+        <h2 class="sectionTitle">Résultat</h2>
+      </div>
+
+      <div class="grid" [class.two]="compareMode">
+        <!-- A -->
+        <div class="col">
+          <div class="colHeader">
+            <div class="colTitle">A — {{ settingsA.model }}</div>
+            <div class="colMeta" *ngIf="resA">
+              {{ resA.latencyMs ?? '?' }} ms · tokens {{ resA.totalTokens ?? '?' }}
+            </div>
+          </div>
+
+          <div class="bubble" [class.empty]="!resA?.reply && !loading">
+            <ng-container *ngIf="loading && !compareMode">Je réfléchis…</ng-container>
+            <ng-container *ngIf="loading && compareMode">Envoi…</ng-container>
+            <ng-container *ngIf="!loading && !resA">Aucune réponse.</ng-container>
+            <ng-container *ngIf="resA?.reply">{{ resA?.reply }}</ng-container>
+          </div>
+
+          <div class="warn" *ngIf="resA?.truncated">
+            ({{ resA?.truncateReason || 'max_output_tokens' }}).
+            <button class="btn mini" type="button" (click)="rerun('A', 4000)">Relancer à 4000</button>
+            <button class="btn mini" type="button" (click)="rerun('A', 8000)">Relancer à 8000</button>
+          </div>
+        </div>
+
+        <!-- B -->
+        <div class="col" *ngIf="compareMode">
+          <div class="colHeader">
+            <div class="colTitle">B — {{ settingsB.model }}</div>
+            <div class="colMeta" *ngIf="resB">
+              {{ resB.latencyMs ?? '?' }} ms · tokens {{ resB.totalTokens ?? '?' }}
+            </div>
+          </div>
+
+          <div class="bubble" [class.empty]="!resB?.reply && !loading">
+            <ng-container *ngIf="loading">Envoi…</ng-container>
+            <ng-container *ngIf="!loading && !resB">Aucune réponse.</ng-container>
+            <ng-container *ngIf="resB?.reply">{{ resB?.reply }}</ng-container>
+          </div>
+
+          <div class="warn" *ngIf="resB?.truncated">
+            Réponse tronquée ({{ resB?.truncateReason ?? 'max_output_tokens' }}).
+            <button class="btn mini" type="button" (click)="rerun('B', 4000)">Relancer à 4000</button>
+            <button class="btn mini" type="button" (click)="rerun('B', 8000)">Relancer à 8000</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span class="small">Astuce : Ctrl+Entrée pour envoyer</span>
+    </footer>
+  </div>
+</div>

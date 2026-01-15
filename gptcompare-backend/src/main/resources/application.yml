@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: gptcompare-backend
+
+server:
+  port: 8080
+
+openai:
+  api:
+    key: ${OPENAI_API_KEY}
+    url: https://api.openai.com/v1/responses
+    model: gpt-5-mini
+
+cors:
+  allowed-origins: http://localhost:4200
+
+logging:
+  level:
+    com.example.gptcompare: DEBUG
